@@ -66,8 +66,8 @@ public class MyVariationDealer implements Dealer {
         if (!duplicates.isEmpty()) throw new InvalidPokerBoardException("повтор карт!");
 
 
-         // объединение со столом для анализа
-        secondCards.addAll(table);
+
+        secondCards.addAll(table);// объединение со столом для анализа
         int firstHand = analisCards(firstCards);
         int secondHand = analisCards(secondCards);
 
@@ -88,7 +88,7 @@ public class MyVariationDealer implements Dealer {
         } else if (checkFour(cards)) {//каре
             System.out.println("Каре");
            return 8;
-        } else if (checkSet(cards)&&checkPair(cards)) {//фулхауз
+        } else if (checkSet(cards)&&checkPair(cards)) {
             System.out.println("Фулхауз");
             return 7;
         } else if (checkFlush(cards)) {
@@ -97,10 +97,10 @@ public class MyVariationDealer implements Dealer {
         } else if (checkStraight(cards)) {
             System.out.println("Стрит");
             return 5;
-        } else if (checkSet(cards)) {//сет
+        } else if (checkSet(cards)) {
             System.out.println("Сет");
             return 4;
-        } else if (check2Pair(cards)) {//две пары
+        } else if (check2Pair(cards)) {
             System.out.println("ДвеПары");
             return 3;
         } else if (checkPair(cards)) {
@@ -152,7 +152,6 @@ public class MyVariationDealer implements Dealer {
             rankCount.put(rank, rankCount.getOrDefault(rank, 0) + 1); // Увеличиваем счетчик для данного ранга
         }
 
-        // Проверяем, есть ли пара
         for (int count : rankCount.values()) {
             if (count == 3) {
                 return true; // найден сет
@@ -167,7 +166,7 @@ public class MyVariationDealer implements Dealer {
             String rank = card.substring(0, card.length() - 1); // Получаем ранг карты
             rankCount.put(rank, rankCount.getOrDefault(rank, 0) + 1); // Увеличиваем счетчик для данного ранга
         }
-        // Проверяем, есть ли пара
+        // Проверяем, есть ли пары
         int pair = 0;
         for (int count : rankCount.values()) {
             if (count == 2) {
@@ -198,7 +197,7 @@ public class MyVariationDealer implements Dealer {
             uniqueRanks.add(card.substring(0, card.length() - 1)); // Получаем ранг карты
         }
 
-        List<String> sortedRanks = new ArrayList<>(uniqueRanks);
+        List<String> sortedRanks = new ArrayList<>(uniqueRanks);//делаем из сета лист
         Collections.sort(sortedRanks, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
 
         int consecutiveCount = 1;
@@ -215,17 +214,17 @@ public class MyVariationDealer implements Dealer {
         return false;}
 
     public boolean royalFlush(List<String> cards){
-        String[] royalRanks = {"10", "J", "Q", "K", "A"};
+        String[] royalRanks = {"10", "J", "Q", "K", "A"};//нужные ранги
         Map<Character, Integer> suitCount = new HashMap<>();
 
-        for (String card : cards) {
+        for (String card : cards) {//проверка мастей на количество кард
             char suit = card.charAt(card.length() - 1);
             suitCount.put(suit, suitCount.getOrDefault(suit, 0) + 1);
         }
 
         for (Character suit : suitCount.keySet()) {
             int count = 0;
-            for (String rank : royalRanks) {
+            for (String rank : royalRanks) {//проверка нужных рангов в масти
                 if (cards.contains(rank + suit)) {
                     count++;
                 }
