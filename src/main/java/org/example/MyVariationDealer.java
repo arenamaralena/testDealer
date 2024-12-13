@@ -6,6 +6,19 @@ public class MyVariationDealer implements Dealer {
     List<String> cardDeck = new ArrayList<>();
     String[] ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
     String[] suits = {"C", "D", "H", "S"};
+
+    private static List<String> parseCards(String hand) {
+        List<String> cards = new ArrayList<>();//для анализа карт
+        String regex = "(10|[2-9]|[JQKA])[CDHS]";//регулярное значение
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex); //создание объекта из регулярного значения
+        java.util.regex.Matcher matcher = pattern.matcher(hand);//объект проверяющий совпаления с паттерном
+
+        while (matcher.find()) { //ищет следующее совпадение в строке
+            cards.add(matcher.group()); //возвращает найденое совпадение и добавляет в лист
+        }
+        return cards;
+    }
+
     @Override
     public Board dealCardsToPlayers() {
 
@@ -15,48 +28,61 @@ public class MyVariationDealer implements Dealer {
             }
         }
         Collections.shuffle(cardDeck);
-        String handOne = removeBrackets(String.valueOf(cardDeck.subList(0, 2))); // выдаем карты
-        String handTwo = removeBrackets(String.valueOf(cardDeck.subList(2, 4)));
-        return new Board(handOne,handTwo, null, null, null);
+        String handOne = (String.join("", (cardDeck.subList(0, 2)))); // выдаем карты
+        String handTwo = (String.join("", (cardDeck.subList(2, 4))));
+        return new Board(handOne, handTwo, null, null, null);
     }
 
     @Override
     public Board dealFlop(Board board) {
-        String flop = removeBrackets(String.valueOf(cardDeck.subList(4,7)));
+        if (board == null) throw new InvalidPokerBoardException("нет карт!");
+        String flop = String.join("", (cardDeck.subList(4, 7)));
         return new Board(board.getPlayerOne(), board.getPlayerTwo(), flop, null, null);
     }
 
     @Override
     public Board dealTurn(Board board) {
-        String turn = removeBrackets(String.valueOf(cardDeck.subList(7,8)));
+        if (board == null) throw new InvalidPokerBoardException("нет карт!");
+        String turn = String.join("", (cardDeck.subList(7, 8)));
         return new Board(board.getPlayerOne(), board.getPlayerTwo(), board.getFlop(), turn, null);
     }
 
     @Override
     public Board dealRiver(Board board) {
-        String river = removeBrackets(String.valueOf(cardDeck.subList(8,9)));
+        if (board == null) throw new InvalidPokerBoardException("нет карт!");
+        String river = String.join("", (cardDeck.subList(8, 9)));
         return new Board(board.getPlayerOne(), board.getPlayerTwo(), board.getFlop(), board.getTurn(), river);
     }
 
     @Override
     public PokerResult decideWinner(Board board) {
 
-        String[] tableGame = {board.getFlop(), board.getRiver(), board.getTurn()}; // объединение игры на столе
-        ArrayList<String> table = new ArrayList<>(Arrays.asList(tableGame));
-        for (int i = 0; i < table.size(); i++) {
-            String[] splitElements = table.get(i).split(",\\s*");
-            table.remove(i); // Удаляем старый элемент
-            table.addAll(i, Arrays.asList(splitElements)); // Добавляем разделенные элементы
-        }//убираем скобки
-        List<String> firstCards = new ArrayList<>(Arrays.asList(board.getPlayerOne().split(",\\s*"))); //привести стринг руки к листу
-        List<String> secondCards = new ArrayList<>(Arrays.asList(board.getPlayerTwo().split(",\\s*")));
-        firstCards.addAll(table);
+        if (board == null) throw new InvalidPokerBoardException("нет карт!");
+        if (board.getPlayerOne() == null) throw new InvalidPokerBoardException("нет карт!");
+        if (board.getPlayerTwo() == null) throw new InvalidPokerBoardException("нет карт!");
+        if (board.getFlop() == null) throw new InvalidPokerBoardException("нет карт!");
+        if (board.getTurn() == null) throw new InvalidPokerBoardException("нет карт!");
+        if (board.getRiver() == null) throw new InvalidPokerBoardException("нет карт!");
 
-        List<String> cardsOnTable =  firstCards;
-        cardsOnTable.addAll(secondCards);
-        List<String> duplicates = new ArrayList<>() ;//множество для отслеживания повторяющихся элементов
+
+        List<String> flopB = new ArrayList<>(parseCards(board.getFlop()));
+        List<String> firstCards = new ArrayList<>(parseCards(board.getPlayerOne())); //привести стринг руки к листу
+        List<String> secondCards = new ArrayList<>(parseCards(board.getPlayerTwo()));
+        PokerResult highCardDec = highCard(firstCards, secondCards);
+
+        List<String> cardsOnTable = new ArrayList<>(); //создаем стол
+        cardsOnTable.addAll(flopB);
+        cardsOnTable.add(board.getTurn());
+        cardsOnTable.add(board.getRiver());
+
+        List<String> cardsOnTableWH = new ArrayList<>(); //создаем стол вместе с руками для проверки
+        cardsOnTableWH.addAll(cardsOnTable);
+        cardsOnTableWH.addAll(firstCards);
+        cardsOnTableWH.addAll(secondCards);
+
+        List<String> duplicates = new ArrayList<>();//множество для отслеживания повторяющихся элементов
         Set<String> tracking = new HashSet<>();
-        for (String crad: cardsOnTable) {//добавляем их во множество для отслеживания
+        for (String crad : cardsOnTableWH) {//добавляем их во множество для отслеживания
             //если не получилось добавить, то значит уже встречался в списке
             if (!tracking.add(crad)) {
                 //в этом случае добавляем его во множество дубликатов
@@ -65,20 +91,19 @@ public class MyVariationDealer implements Dealer {
         }
         if (!duplicates.isEmpty()) throw new InvalidPokerBoardException("повтор карт!");
 
-
-
-        secondCards.addAll(table);// объединение со столом для анализа
+        firstCards.addAll(cardsOnTable);
+        secondCards.addAll(cardsOnTable); // объединение со столом для анализа
         int firstHand = analisCards(firstCards);
         int secondHand = analisCards(secondCards);
 
         if (firstHand > secondHand) return PokerResult.PLAYER_ONE_WIN;
         else if (secondHand > firstHand)
             return PokerResult.PLAYER_TWO_WIN;
-        else if ((firstHand == 1) & (secondHand == 1)) { return highCard(firstCards,secondCards);}
         else
-            return PokerResult.DRAW;
+            return highCardDec;
     }
-    private int analisCards(List<String> cards){
+
+    private int analisCards(List<String> cards) {
         if (royalFlush(cards)) {
             System.out.println("РоялФлеш");
             return 10;
@@ -87,8 +112,8 @@ public class MyVariationDealer implements Dealer {
             return 9;
         } else if (checkFour(cards)) {//каре
             System.out.println("Каре");
-           return 8;
-        } else if (checkSet(cards)&&checkPair(cards)) {
+            return 8;
+        } else if (checkSet(cards) && checkPair(cards)) {
             System.out.println("Фулхауз");
             return 7;
         } else if (checkFlush(cards)) {
@@ -113,7 +138,7 @@ public class MyVariationDealer implements Dealer {
 
     }
 
-    public boolean checkFlush (List<String> cards){
+    public boolean checkFlush(List<String> cards) {
         Map<String, Integer> countSuits = new HashMap<>();
         for (String card : cards) {
             String suit = card.substring(card.length() - 1); // Получаем масть карты
@@ -128,7 +153,7 @@ public class MyVariationDealer implements Dealer {
         return false; // Флеш не найден
     }
 
-    public boolean checkPair(List<String> cards){
+    public boolean checkPair(List<String> cards) {
         Map<String, Integer> rankCount = new HashMap<>();
 
         for (String card : cards) {
@@ -143,9 +168,10 @@ public class MyVariationDealer implements Dealer {
             }
         }
 
-    return false;}
+        return false;
+    }
 
-    public boolean checkSet(List<String>cards){
+    public boolean checkSet(List<String> cards) {
         Map<String, Integer> rankCount = new HashMap<>();
         for (String card : cards) {
             String rank = card.substring(0, card.length() - 1); // Получаем ранг карты
@@ -157,9 +183,10 @@ public class MyVariationDealer implements Dealer {
                 return true; // найден сет
             }
         }
-    return false;}
+        return false;
+    }
 
-    public boolean check2Pair(List<String> cards){
+    public boolean check2Pair(List<String> cards) {
         Map<String, Integer> rankCount = new HashMap<>();
 
         for (String card : cards) {
@@ -170,15 +197,16 @@ public class MyVariationDealer implements Dealer {
         int pair = 0;
         for (int count : rankCount.values()) {
             if (count == 2) {
-                 pair++;
+                pair++;
             }
         }
-        if (pair == 2){
+        if (pair == 2) {
             return true;
         }
-        return false;}
+        return false;
+    }
 
-    public boolean checkFour(List<String>cards){
+    public boolean checkFour(List<String> cards) {
         Map<String, Integer> rankCount = new HashMap<>();
         for (String card : cards) {
             String rank = card.substring(0, card.length() - 1); // Получаем ранг карты
@@ -189,9 +217,10 @@ public class MyVariationDealer implements Dealer {
                 return true; // Каре!
             }
         }
-        return false;}
+        return false;
+    }
 
-    public boolean checkStraight(List<String> cards){
+    public boolean checkStraight(List<String> cards) {
         Set<String> uniqueRanks = new HashSet<>();
         for (String card : cards) {
             uniqueRanks.add(card.substring(0, card.length() - 1)); // Получаем ранг карты
@@ -211,9 +240,10 @@ public class MyVariationDealer implements Dealer {
                 consecutiveCount = 1; // Сброс счётчика, если разрыв
             }
         }
-        return false;}
+        return false;
+    }
 
-    public boolean royalFlush(List<String> cards){
+    public boolean royalFlush(List<String> cards) {
         String[] royalRanks = {"10", "J", "Q", "K", "A"};//нужные ранги
         Map<Character, Integer> suitCount = new HashMap<>();
 
@@ -233,12 +263,24 @@ public class MyVariationDealer implements Dealer {
                 return true; // Найден флеш-рояль
             }
         }
-    return false;}
+        return false;
+    }
 
-    public PokerResult highCard (List<String> cards1,List<String> cards2){
+    public PokerResult highCard(List<String> cards1, List<String> cards2) {
         String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
-        String[] list1a = cards1.toArray(new String[0]);
-        String[] list2a = cards2.toArray(new String[0]);
+        Set<String> rangC1 = new HashSet<>();
+        for (String card1 : cards1) {
+            rangC1.add(card1.substring(0, card1.length() - 1)); // Получаем ранг карты
+        }
+        List<String> sortedRanks = new ArrayList<>(rangC1);
+        Set<String> rangC2 = new HashSet<>();
+        for (String card2 : cards2) {
+            rangC2.add(card2.substring(0, card2.length() - 1)); // Получаем ранг карты
+        }
+        List<String> sortedRanks2 = new ArrayList<>(rangC2);
+
+        String[] list1a = sortedRanks.toArray(new String[0]);
+        String[] list2a = sortedRanks2.toArray(new String[0]);
         // Сравнение карт поочередно
         for (int k = 0; k < Math.min(list1a.length, list2a.length); k++) {
             int comparison = Integer.compare(indexOf(order, list1a[k]), indexOf(order, list2a[k]));
@@ -249,18 +291,11 @@ public class MyVariationDealer implements Dealer {
                 return PokerResult.PLAYER_TWO_WIN; // Игрок 2 выигрывает
             }
         }
-
         // Если все карты равны или все карты были проверены и равны
         return PokerResult.DRAW;
 
     }
-    private static String removeBrackets(String string) {
-        // Убираем первый и последний символы, если они скобки
-        if (string.startsWith("[") && string.endsWith("]")) {
-            return string.substring(1, string.length() - 1);
-        }
-        return string; // Возвращаем строку без изменений, если скобок нет
-    }
+
     private int indexOf(String[] order, String mean) {
         for (int i = 0; i < order.length; i++) {
             if (order[i].equals(mean)) {
