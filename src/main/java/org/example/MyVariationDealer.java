@@ -95,12 +95,28 @@ public class MyVariationDealer implements Dealer {
         secondCards.addAll(cardsOnTable); // объединение со столом для анализа
         int firstHand = analisCards(firstCards);
         int secondHand = analisCards(secondCards);
+        PokerResult highCardDecFH = highCard(firstCards, secondCards);
 
         if (firstHand > secondHand) return PokerResult.PLAYER_ONE_WIN;
         else if (secondHand > firstHand)
             return PokerResult.PLAYER_TWO_WIN;
-        else
+        else if (firstHand == 10 & secondHand == 10){
             return highCardDec;
+        }
+        else if (firstHand == 8 & secondHand == 8) {
+            return checkKiker(firstCards, secondCards, 1);
+
+        } else if (firstHand == 4 & secondHand == 4) {
+            return checkKiker(firstCards, secondCards, 2);
+
+        } else if (firstHand == 3 & secondHand == 3) {
+            return comparePair(firstCards, secondCards,1);
+
+        } else if (firstHand == 2 & secondHand == 2) {
+            return comparePair(firstCards, secondCards,3);
+
+        } else
+            return highCardDecFH;
     }
 
     private int analisCards(List<String> cards) {
@@ -206,6 +222,53 @@ public class MyVariationDealer implements Dealer {
         return false;
     }
 
+    public PokerResult comparePair(List<String> cards1, List<String> cards2,int g) {
+        String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
+        Map<String, Integer> rankCount1 = new HashMap<>();
+        for (String card1 : cards1) {
+            String rank1 = card1.substring(0, card1.length() - 1); // Получаем ранг карты
+            rankCount1.put(rank1, rankCount1.getOrDefault(rank1, 0) + 1); // Увеличиваем счетчик для данного ранга
+        }
+        List<String> setKeys1 = new ArrayList<>();
+        for (Map.Entry<String, Integer> rank1 : rankCount1.entrySet()) {
+            if (rank1.getValue() == 2) {
+                setKeys1.add(rank1.getKey());
+            }
+        }
+
+        Map<String, Integer> rankCount2 = new HashMap<>();
+        for (String card2 : cards2) {
+            String rank2 = card2.substring(0, card2.length() - 1); // Получаем ранг карты
+            rankCount2.put(rank2, rankCount2.getOrDefault(rank2, 0) + 1); // Увеличиваем счетчик для данного ранга
+        }
+        List<String> setKeys2 = new ArrayList<>();
+        for (Map.Entry<String, Integer> rank2 : rankCount2.entrySet()) {
+            if (rank2.getValue() == 2) {
+                setKeys2.add(rank2.getKey());
+            }
+        }
+
+        Collections.sort(setKeys1, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(setKeys1);
+        Collections.sort(setKeys2, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(setKeys2);
+
+        String[] list1a = setKeys1.toArray(new String[0]);
+        String[] list2a = setKeys2.toArray(new String[0]);
+        for (int i = 0; i < Math.min(list1a.length, list2a.length); i++) {
+            int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
+            if (comparison > 0) {
+                return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
+            } else if (comparison < 0) {
+                return PokerResult.PLAYER_TWO_WIN; // Игрок 2 выигрывает
+            }
+        }
+        // Если все карты равны или все карты были проверены и равны
+        return checkKiker(cards1,cards2,g);
+
+    }
+
+
     public boolean checkFour(List<String> cards) {
         Map<String, Integer> rankCount = new HashMap<>();
         for (String card : cards) {
@@ -272,19 +335,23 @@ public class MyVariationDealer implements Dealer {
         for (String card1 : cards1) {
             rangC1.add(card1.substring(0, card1.length() - 1)); // Получаем ранг карты
         }
-        List<String> sortedRanks = new ArrayList<>(rangC1);
+        List<String> firstRanks = new ArrayList<>(rangC1);
         Set<String> rangC2 = new HashSet<>();
         for (String card2 : cards2) {
             rangC2.add(card2.substring(0, card2.length() - 1)); // Получаем ранг карты
         }
-        List<String> sortedRanks2 = new ArrayList<>(rangC2);
+        List<String> secondRanks = new ArrayList<>(rangC2);
 
-        String[] list1a = sortedRanks.toArray(new String[0]);
-        String[] list2a = sortedRanks2.toArray(new String[0]);
         // Сравнение карт поочередно
-        for (int k = 0; k < Math.min(list1a.length, list2a.length); k++) {
-            int comparison = Integer.compare(indexOf(order, list1a[k]), indexOf(order, list2a[k]));
+        Collections.sort(firstRanks, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(firstRanks);
+        Collections.sort(secondRanks, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(secondRanks);
+        String[] list1a = firstRanks.toArray(new String[0]);
+        String[] list2a = secondRanks.toArray(new String[0]);
 
+        for (int i = 0; i < Math.min(list1a.length, list2a.length); i++) {
+            int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
             if (comparison > 0) {
                 return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
             } else if (comparison < 0) {
@@ -293,6 +360,40 @@ public class MyVariationDealer implements Dealer {
         }
         // Если все карты равны или все карты были проверены и равны
         return PokerResult.DRAW;
+    }
+
+    public PokerResult checkKiker(List<String> cards1, List<String> cards2, int g) {
+        String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
+
+        Set<String> uniqueRanks1 = new HashSet<>();
+        for (String card : cards1) {
+            uniqueRanks1.add(card.substring(0, card.length() - 1)); // Получаем ранг карты
+        }
+        List<String> sortedRanks1 = new ArrayList<>(uniqueRanks1);//делаем из сета лист
+        Collections.sort(sortedRanks1, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(sortedRanks1);
+
+        Set<String> uniqueRanks2 = new HashSet<>();
+        for (String card : cards2) {
+            uniqueRanks2.add(card.substring(0, card.length() - 1)); // Получаем ранг карты
+        }
+        List<String> sortedRanks2 = new ArrayList<>(uniqueRanks2);//делаем из сета лист
+        Collections.sort(sortedRanks2, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(sortedRanks2);
+
+        String[] list1a = sortedRanks1.toArray(new String[0]);
+        String[] list2a = sortedRanks2.toArray(new String[0]);
+        for (int i = 0; i < g; i++) {
+            int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
+            if (comparison > 0) {
+                return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
+            } else if (comparison < 0) {
+                return PokerResult.PLAYER_TWO_WIN; // Игрок 2 выигрывает
+            }
+        }
+        // Если все карты равны или все карты были проверены и равны
+        return PokerResult.DRAW;
+
 
     }
 
