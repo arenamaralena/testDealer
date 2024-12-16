@@ -68,7 +68,6 @@ public class MyVariationDealer implements Dealer {
         List<String> flopB = new ArrayList<>(parseCards(board.getFlop()));
         List<String> firstCards = new ArrayList<>(parseCards(board.getPlayerOne())); //привести стринг руки к листу
         List<String> secondCards = new ArrayList<>(parseCards(board.getPlayerTwo()));
-        PokerResult highCardDec = highCard(firstCards, secondCards);
 
         List<String> cardsOnTable = new ArrayList<>(); //создаем стол
         cardsOnTable.addAll(flopB);
@@ -101,7 +100,7 @@ public class MyVariationDealer implements Dealer {
         else if (secondHand > firstHand)
             return PokerResult.PLAYER_TWO_WIN;
         else if (firstHand == 10 & secondHand == 10){
-            return highCardDec;
+            return highCardDecFH;
         }
         else if (firstHand == 8 & secondHand == 8) {
             return checkKiker(firstCards, secondCards, 1);
@@ -350,7 +349,7 @@ public class MyVariationDealer implements Dealer {
         String[] list1a = firstRanks.toArray(new String[0]);
         String[] list2a = secondRanks.toArray(new String[0]);
 
-        for (int i = 0; i < Math.min(list1a.length, list2a.length); i++) {
+        for (int i = 0; i < 5; i++) {
             int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
             if (comparison > 0) {
                 return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
