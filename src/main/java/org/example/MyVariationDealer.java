@@ -99,9 +99,6 @@ public class MyVariationDealer implements Dealer {
         if (firstHand > secondHand) return PokerResult.PLAYER_ONE_WIN;
         else if (secondHand > firstHand)
             return PokerResult.PLAYER_TWO_WIN;
-        else if (firstHand == 10 & secondHand == 10){
-            return highCardDecFH;
-        }
         else if (firstHand == 8 & secondHand == 8) {
             return checkKiker(firstCards, secondCards, 1);
 
