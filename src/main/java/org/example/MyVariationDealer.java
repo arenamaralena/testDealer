@@ -103,13 +103,13 @@ public class MyVariationDealer implements Dealer {
             return checkKiker(firstCards, secondCards, 1);
 
         } else if (firstHand == 4 & secondHand == 4) {
-            return checkKiker(firstCards, secondCards, 2);
+            return compareSet(firstCards, secondCards, 2);
 
         } else if (firstHand == 3 & secondHand == 3) {
-            return comparePair(firstCards, secondCards,1);
+            return comparePair(firstCards, secondCards,1,2);
 
         } else if (firstHand == 2 & secondHand == 2) {
-            return comparePair(firstCards, secondCards,3);
+            return comparePair(firstCards, secondCards,3,1);
 
         } else
             return highCardDecFH;
@@ -212,13 +212,13 @@ public class MyVariationDealer implements Dealer {
                 pair++;
             }
         }
-        if (pair == 2) {
+        if (pair >= 2) {
             return true;
         }
         return false;
     }
 
-    public PokerResult comparePair(List<String> cards1, List<String> cards2,int g) {
+    public PokerResult comparePair(List<String> cards1, List<String> cards2,int g,int f) {
         String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
         Map<String, Integer> rankCount1 = new HashMap<>();
         for (String card1 : cards1) {
@@ -251,7 +251,7 @@ public class MyVariationDealer implements Dealer {
 
         String[] list1a = setKeys1.toArray(new String[0]);
         String[] list2a = setKeys2.toArray(new String[0]);
-        for (int i = 0; i < Math.min(list1a.length, list2a.length); i++) {
+        for (int i = 0; i < Math.min(f,(Math.min(list1a.length, list2a.length))); i++) {
             int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
             if (comparison > 0) {
                 return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
@@ -346,7 +346,7 @@ public class MyVariationDealer implements Dealer {
         String[] list1a = firstRanks.toArray(new String[0]);
         String[] list2a = secondRanks.toArray(new String[0]);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Math.min(5,(Math.min(list1a.length, list2a.length))); i++) {
             int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
             if (comparison > 0) {
                 return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
@@ -390,6 +390,51 @@ public class MyVariationDealer implements Dealer {
         // Если все карты равны или все карты были проверены и равны
         return PokerResult.DRAW;
 
+
+    }
+    public PokerResult compareSet(List<String> cards1, List<String> cards2,int g) {
+        String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
+        Map<String, Integer> rankCount1 = new HashMap<>();
+        for (String card1 : cards1) {
+            String rank1 = card1.substring(0, card1.length() - 1); // Получаем ранг карты
+            rankCount1.put(rank1, rankCount1.getOrDefault(rank1, 0) + 1); // Увеличиваем счетчик для данного ранга
+        }
+        List<String> setKeys1 = new ArrayList<>();
+        for (Map.Entry<String, Integer> rank1 : rankCount1.entrySet()) {
+            if (rank1.getValue() == 3) {
+                setKeys1.add(rank1.getKey());
+            }
+        }
+
+        Map<String, Integer> rankCount2 = new HashMap<>();
+        for (String card2 : cards2) {
+            String rank2 = card2.substring(0, card2.length() - 1); // Получаем ранг карты
+            rankCount2.put(rank2, rankCount2.getOrDefault(rank2, 0) + 1); // Увеличиваем счетчик для данного ранга
+        }
+        List<String> setKeys2 = new ArrayList<>();
+        for (Map.Entry<String, Integer> rank2 : rankCount2.entrySet()) {
+            if (rank2.getValue() == 3) {
+                setKeys2.add(rank2.getKey());
+            }
+        }
+
+        Collections.sort(setKeys1, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(setKeys1);
+        Collections.sort(setKeys2, Comparator.comparingInt(rank -> Arrays.asList(ranks).indexOf(rank)));
+        Collections.reverse(setKeys2);
+
+        String[] list1a = setKeys1.toArray(new String[0]);
+        String[] list2a = setKeys2.toArray(new String[0]);
+        for (int i = 0; i < Math.min(g,(Math.min(list1a.length, list2a.length))); i++) {
+            int comparison = Integer.compare(indexOf(order, list1a[i]), indexOf(order, list2a[i]));
+            if (comparison > 0) {
+                return PokerResult.PLAYER_ONE_WIN; // Игрок 1 выигрывает
+            } else if (comparison < 0) {
+                return PokerResult.PLAYER_TWO_WIN; // Игрок 2 выигрывает
+            }
+        }
+        // Если все карты равны или все карты были проверены и равны
+        return checkKiker(cards1,cards2,g);
 
     }
 
