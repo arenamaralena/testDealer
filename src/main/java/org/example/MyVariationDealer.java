@@ -4,8 +4,8 @@ import java.util.*;
 
 public class MyVariationDealer implements Dealer {
     List<String> cardDeck = new ArrayList<>();
-    String[] ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
-    String[] suits = {"C", "D", "H", "S"};
+    List<Ranks> ranks = List.of(Ranks.values());
+    List<Suits> suits = List.of(Suits.values());
     Checks checks = new Checks();
 
     private static List<String> parseCards(String hand) {
@@ -23,9 +23,9 @@ public class MyVariationDealer implements Dealer {
     @Override
     public Board dealCardsToPlayers() {
 
-        for (String rank : ranks) { //собираем колоду
-            for (String suit : suits) {
-                cardDeck.add(rank + suit);
+        for (Ranks rank : ranks) { //собираем колоду
+            for (Suits suit : suits) {
+                cardDeck.add(rank.getValue() + suit.getSuit());
             }
         }
         Collections.shuffle(cardDeck);

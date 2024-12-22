@@ -3,9 +3,19 @@ package org.example;
 import java.util.*;
 
 public class Checks {
-    String[] order = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
     CompareSorter compare = new CompareSorter();
     RankSuitGet rankSuitGet = new RankSuitGet();
+    public static String[] getRankValues() {
+        Ranks[] ranks = Ranks.values();
+        String[] values = new String[ranks.length];
+
+        for (int i = 0; i < ranks.length; i++) {
+            values[i] = ranks[i].getValue();
+        }
+
+        return values;
+    }
+    String[] order = getRankValues();
 
     public int analisCards(List<String> cards) {
         if (royalFlush(cards)) {
@@ -97,6 +107,7 @@ public class Checks {
     }
 
     public boolean checkStraight(List<String> cards) {
+
 
         List<String> sortedRanks = new ArrayList<>(sortingRank(cards));
         Collections.reverse(sortedRanks);//делаем из сета лист
